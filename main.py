@@ -1,4 +1,3 @@
-import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -24,11 +23,9 @@ async def is_user_joined(bot, user_id: int):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
-    # Create user if not exists
     create_user(user_id)
     update_last_active(user_id)
 
-    # Check channel subscription
     joined = await is_user_joined(context.bot, int(user_id))
 
     if not joined:
@@ -43,19 +40,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     set_join_status(user_id, True)
-    await show_main_menu(update)
+    await show_main_menu(update, context)
 
 
 # ✅ Main Menu
-async def show_main_menu(update: Update):
+async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("👤 My Profile", callback_data="profile")]
     ]
 
-    await update.message.reply_text(
-        "🎬 Welcome to Viral Machine\n\nPhase 1 Active ✅",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
+    text = "🎬 Welcome to Viral Machine\n\nPhase 1 Active ✅"
+
+    if update.message:
+        await update.message.reply_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+    elif update.callback_query:
+        await update.callback_query.message.reply_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
 
 # ✅ Button Handler
@@ -72,7 +77,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if joined:
             set_join_status(user_id, True)
             await query.message.delete()
-            await show_main_menu(update)
+            await show_main_menu(update, context)
         else:
             await query.answer("❌ এখনো চ্যানেলে যোগ দেননি!", show_alert=True)
 
@@ -89,8 +94,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(msg)
 
 
-# ✅ Main Runner
-async def main():
+# ✅ MAIN ENTRY (Render Safe)
+if __name__ == "__main__":
     run_web()  # keep alive server
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -100,8 +105,4 @@ async def main():
 
     print("Bot Running...")
 
-    await app.run_polling()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    app.run_polling()
