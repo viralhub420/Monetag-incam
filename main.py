@@ -1,4 +1,3 @@
-import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -6,12 +5,20 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
+
 from config import BOT_TOKEN, MAIN_CHANNEL
-from user_manager import create_user, update_last_active, set_join_status, get_user_data
+from user_manager import (
+    create_user,
+    update_last_active,
+    set_join_status,
+    get_user_data,
+)
 from keep_alive import run_web
 
 
+# ==============================
 # ✅ Channel Join Check
+# ==============================
 async def is_user_joined(bot, user_id: int):
     try:
         member = await bot.get_chat_member(MAIN_CHANNEL, user_id)
@@ -20,7 +27,9 @@ async def is_user_joined(bot, user_id: int):
         return False
 
 
+# ==============================
 # ✅ Start Command
+# ==============================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
@@ -34,6 +43,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("📢 Join Channel", url=f"https://t.me/{MAIN_CHANNEL[1:]}")],
             [InlineKeyboardButton("✅ Joined", callback_data="check_join")]
         ]
+
         await update.message.reply_text(
             "❌ আগে আমাদের চ্যানেলে যোগ দিন।",
             reply_markup=InlineKeyboardMarkup(keyboard),
@@ -44,7 +54,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_main_menu(update)
 
 
+# ==============================
 # ✅ Main Menu
+# ==============================
 async def show_main_menu(update: Update):
     keyboard = [
         [InlineKeyboardButton("👤 My Profile", callback_data="profile")],
@@ -63,7 +75,9 @@ async def show_main_menu(update: Update):
         )
 
 
+# ==============================
 # ✅ Button Handler
+# ==============================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -71,6 +85,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
     update_last_active(user_id)
 
+    # ------------------------------
+    # Check Join Button
+    # ------------------------------
     if query.data == "check_join":
         joined = await is_user_joined(context.bot, int(user_id))
 
@@ -81,6 +98,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.answer("❌ এখনো চ্যানেলে যোগ দেননি!", show_alert=True)
 
+    # ------------------------------
+    # Profile Button
+    # ------------------------------
     elif query.data == "profile":
         user_data = get_user_data(user_id)
 
@@ -92,6 +112,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_text(msg)
 
+    # ------------------------------
+    # Withdraw Button
+    # ------------------------------
     elif query.data == "withdraw":
         user_data = get_user_data(user_id)
         points = user_data.get("points", 0)
@@ -109,19 +132,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
 
+# ==============================
 # ✅ Main Runner (Render Safe)
-async def main():
-    run_web()
+# ==============================
+def main():
+    run_web()  # keep alive server
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("Bot Running...")
+    print("Bot Running Stable...")
 
-    await app.run_polling()
+    app.run_polling()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
