@@ -1,3 +1,4 @@
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -6,7 +7,7 @@ from telegram.ext import (
     ContextTypes,
 )
 from config import BOT_TOKEN, MAIN_CHANNEL
-from user_manager import create_user, update_last_active, set_join_status
+from user_manager import create_user, update_last_active, set_join_status, get_user_data
 from keep_alive import run_web
 
 
@@ -40,25 +41,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     set_join_status(user_id, True)
-    await show_main_menu(update, context)
+    await show_main_menu(update)
 
 
 # ✅ Main Menu
-async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_main_menu(update: Update):
     keyboard = [
-        [InlineKeyboardButton("👤 My Profile", callback_data="profile")]
+        [InlineKeyboardButton("👤 My Profile", callback_data="profile")],
+        [InlineKeyboardButton("💰 Withdraw", callback_data="withdraw")]
     ]
 
-    text = "🎬 Welcome to Viral Machine\n\nPhase 1 Active ✅"
-
-    if update.message:
-        await update.message.reply_text(
-            text,
+    if update.callback_query:
+        await update.callback_query.message.reply_text(
+            "🎬 Welcome to Viral Machine\n\nChoose an option:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-    elif update.callback_query:
-        await update.callback_query.message.reply_text(
-            text,
+    else:
+        await update.message.reply_text(
+            "🎬 Welcome to Viral Machine\n\nChoose an option:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
@@ -77,12 +77,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if joined:
             set_join_status(user_id, True)
             await query.message.delete()
-            await show_main_menu(update, context)
+            await show_main_menu(update)
         else:
             await query.answer("❌ এখনো চ্যানেলে যোগ দেননি!", show_alert=True)
 
     elif query.data == "profile":
-        from user_manager import get_user_data
         user_data = get_user_data(user_id)
 
         msg = (
@@ -93,10 +92,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_text(msg)
 
+    elif query.data == "withdraw":
+        user_data = get_user_data(user_id)
+        points = user_data.get("points", 0)
 
-# ✅ MAIN ENTRY (Render Safe)
-if __name__ == "__main__":
-    run_web()  # keep alive server
+        MIN_WITHDRAW = 2000  # High minimum control
+
+        if points < MIN_WITHDRAW:
+            await query.message.reply_text(
+                f"❌ Minimum withdraw is {MIN_WITHDRAW} points.\n"
+                f"Your current points: {points}"
+            )
+        else:
+            await query.message.reply_text(
+                "✅ Withdraw request received.\nAdmin will review manually."
+            )
+
+
+# ✅ Main Runner (Render Safe)
+async def main():
+    run_web()
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -105,4 +120,8 @@ if __name__ == "__main__":
 
     print("Bot Running...")
 
-    app.run_polling()
+    await app.run_polling()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
