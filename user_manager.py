@@ -1,72 +1,63 @@
-import json
-import os
+import firebase_admin
+from firebase_admin import credentials, db
 from datetime import datetime
+import os
+import json
+from config import DATABASE_URL
 
-DATA_FILE = "users.json"
+# ==============================
+# Firebase Initialize (Render Safe)
+# ==============================
+if not firebase_admin._apps:
+    cred_json = os.getenv("FIREBASE_CREDENTIALS")
 
-
-# ==========================
-# Load Database
-# ==========================
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "w") as f:
-            json.dump({}, f)
-
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
-
-
-# ==========================
-# Save Database
-# ==========================
-def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    if cred_json:
+        cred_dict = json.loads(cred_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred, {
+            "databaseURL": DATABASE_URL
+        })
+    else:
+        raise ValueError("FIREBASE_CREDENTIALS not found in environment")
 
 
-# ==========================
+# ==============================
 # Create New User
-# ==========================
+# ==============================
 def create_user(user_id):
-    data = load_data()
-
-    if user_id not in data:
-        data[user_id] = {
+    ref = db.reference(f"users/{user_id}")
+    if not ref.get():
+        ref.set({
             "points": 0,
             "created_at": str(datetime.now()),
             "last_active": str(datetime.now()),
             "joined": False
-        }
-
-        save_data(data)
+        })
 
 
-# ==========================
+# ==============================
 # Update Last Active
-# ==========================
+# ==============================
 def update_last_active(user_id):
-    data = load_data()
+    ref = db.reference(f"users/{user_id}")
+    ref.update({
+        "last_active": str(datetime.now())
+    })
 
-    if user_id in data:
-        data[user_id]["last_active"] = str(datetime.now())
-        save_data(data)
 
-
-# ==========================
+# ==============================
 # Set Join Status
-# ==========================
+# ==============================
 def set_join_status(user_id, status: bool):
-    data = load_data()
+    ref = db.reference(f"users/{user_id}")
+    ref.update({
+        "joined": status
+    })
 
-    if user_id in data:
-        data[user_id]["joined"] = status
-        save_data(data)
 
-
-# ==========================
+# ==============================
 # Get User Data
-# ==========================
+# ==============================
 def get_user_data(user_id):
-    data = load_data()
-    return data.get(user_id, {})
+    ref = db.reference(f"users/{user_id}")
+    return ref.get() or {}
