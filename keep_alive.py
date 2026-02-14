@@ -1,14 +1,17 @@
 from flask import Flask
 import threading
 
-def run_web():
-    app = Flask("")
+app = Flask(__name__)
 
-    @app.route("/")
-    def home():
-        return "Bot is Running"
+@app.route("/")
+def home():
+    return "Bot is Running Stable"
 
-    threading.Thread(
-        target=lambda: app.run(host="0.0.0.0", port=10000),
-        daemon=True,
-    ).start()
+def run():
+    # রেন্ডারের জন্য পোর্ট ১০০০০ এ রান করা জরুরি
+    app.run(host="0.0.0.0", port=10000)
+
+def keep_alive():
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    
