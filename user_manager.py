@@ -1,32 +1,72 @@
+import json
+import os
 from datetime import datetime
-from firebase_db import init_firebase
 
-db_ref = init_firebase()
+DATA_FILE = "users.json"
 
-def get_user_ref(user_id: str):
-    return db_ref.child("users").child(user_id)
 
-def user_exists(user_id: str):
-    return get_user_ref(user_id).get() is not None
+# ==========================
+# Load Database
+# ==========================
+def load_data():
+    if not os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "w") as f:
+            json.dump({}, f)
 
-def create_user(user_id: str):
-    if not user_exists(user_id):
-        get_user_ref(user_id).set({
+    with open(DATA_FILE, "r") as f:
+        return json.load(f)
+
+
+# ==========================
+# Save Database
+# ==========================
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+# ==========================
+# Create New User
+# ==========================
+def create_user(user_id):
+    data = load_data()
+
+    if user_id not in data:
+        data[user_id] = {
             "points": 0,
-            "created_at": datetime.utcnow().isoformat(),
-            "last_active": datetime.utcnow().isoformat(),
+            "created_at": str(datetime.now()),
+            "last_active": str(datetime.now()),
             "joined": False
-        })
+        }
 
-def update_last_active(user_id: str):
-    get_user_ref(user_id).update({
-        "last_active": datetime.utcnow().isoformat()
-    })
+        save_data(data)
 
-def get_user_data(user_id: str):
-    return get_user_ref(user_id).get()
 
-def set_join_status(user_id: str, status: bool):
-    get_user_ref(user_id).update({
-        "joined": status
-    })
+# ==========================
+# Update Last Active
+# ==========================
+def update_last_active(user_id):
+    data = load_data()
+
+    if user_id in data:
+        data[user_id]["last_active"] = str(datetime.now())
+        save_data(data)
+
+
+# ==========================
+# Set Join Status
+# ==========================
+def set_join_status(user_id, status: bool):
+    data = load_data()
+
+    if user_id in data:
+        data[user_id]["joined"] = status
+        save_data(data)
+
+
+# ==========================
+# Get User Data
+# ==========================
+def get_user_data(user_id):
+    data = load_data()
+    return data.get(user_id, {})
