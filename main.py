@@ -13,11 +13,10 @@ from user_manager import (
     set_join_status,
     get_user_data,
 )
-from keep_alive import run_web
 
 
 # ==============================
-# ✅ Channel Join Check
+# Channel Join Check
 # ==============================
 async def is_user_joined(bot, user_id: int):
     try:
@@ -28,7 +27,7 @@ async def is_user_joined(bot, user_id: int):
 
 
 # ==============================
-# ✅ Start Command
+# Start Command
 # ==============================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -55,7 +54,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ==============================
-# ✅ Main Menu
+# Main Menu
 # ==============================
 async def show_main_menu(update: Update):
     keyboard = [
@@ -65,18 +64,18 @@ async def show_main_menu(update: Update):
 
     if update.callback_query:
         await update.callback_query.message.reply_text(
-            "🎬 Welcome to Viral Machine\n\nChoose an option:",
+            "🎬 Welcome to Income Hub\n\nChoose an option:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
     else:
         await update.message.reply_text(
-            "🎬 Welcome to Viral Machine\n\nChoose an option:",
+            "🎬 Welcome to Income Hub\n\nChoose an option:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
 
 # ==============================
-# ✅ Button Handler
+# Button Handler
 # ==============================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -85,9 +84,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
     update_last_active(user_id)
 
-    # ------------------------------
-    # Check Join Button
-    # ------------------------------
     if query.data == "check_join":
         joined = await is_user_joined(context.bot, int(user_id))
 
@@ -98,9 +94,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.answer("❌ এখনো চ্যানেলে যোগ দেননি!", show_alert=True)
 
-    # ------------------------------
-    # Profile Button
-    # ------------------------------
     elif query.data == "profile":
         user_data = get_user_data(user_id)
 
@@ -112,14 +105,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_text(msg)
 
-    # ------------------------------
-    # Withdraw Button
-    # ------------------------------
     elif query.data == "withdraw":
         user_data = get_user_data(user_id)
         points = user_data.get("points", 0)
 
-        MIN_WITHDRAW = 2000  # High minimum control
+        MIN_WITHDRAW = 2000
 
         if points < MIN_WITHDRAW:
             await query.message.reply_text(
@@ -133,11 +123,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ==============================
-# ✅ Main Runner (Render Safe)
+# Main Runner (Render Safe)
 # ==============================
 def main():
-    run_web()  # keep alive server
-
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
