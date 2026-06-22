@@ -42,7 +42,7 @@ CHANNELS = [
 
 APP_URL = os.environ.get("APP_URL") 
 MOVIE_APP_URL = "https://mediago99.github.io/Viral-Link01/"
-FIREBASE_DB_URL = "https://viralmoviehubbd-default-rtdb.firebaseio.com/"
+FIREBASE_DB_URL = "https://movie-hud-default-rtdb.asia-southeast1.firebasedatabase.app/"
 FIREBASE_CREDS = os.environ.get("FIREBASE_CREDENTIALS")
 
 # রেফারেল সংখ্যা
