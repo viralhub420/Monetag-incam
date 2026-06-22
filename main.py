@@ -31,12 +31,12 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 ADMIN_ID = 6311806060  
 
 # যে চ্যানেলে জয়েন করা বাধ্যতামূলক (Force Join)
-REQUIRED_CHANNEL = "@viralmoviehubbd" 
+REQUIRED_CHANNEL = "@cutemasala" 
 
 # যে চ্যানেলগুলোতে অটো পোস্ট যাবে (লিস্ট আকারে)
 CHANNELS = [
-    "@viralmoviehubbd", 
-    "@pornExpress1", 
+    "@cutemasala", 
+    "abcf", 
     "@ইউজারনেম_এখানে_দিন" # ৩য় চ্যানেলটি এখানে বসাবেন
 ]
 
