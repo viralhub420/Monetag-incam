@@ -42,52 +42,6 @@
     <div id="movie-list" class="grid grid-cols-2 gap-3"></div>
 </div>
 
-<div id="player-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col justify-end">
-    <div class="bg-[#12131a] w-full rounded-t-3xl max-h-[90vh] flex flex-col overflow-y-auto no-scrollbar">
-        
-        <div class="flex justify-between items-center p-4 border-b border-gray-900">
-            <span class="text-yellow-400 font-bold text-sm">Video Player</span>
-            <button onclick="closePlayer()" class="bg-red-600 text-white text-xs px-4 py-1.5 rounded-lg font-bold">বন্ধ করুন</button>
-        </div>
-
-        <div class="p-4 flex flex-col items-center">
-            <h2 class="text-xl font-bold text-[#4da6ff] mb-4 tracking-wider uppercase">VIRAL VIDEO PRO</h2>
-            
-            <div class="w-full bg-black rounded-2xl border border-gray-800 overflow-hidden relative aspect-video flex items-center justify-center mb-2">
-                <video id="main-video-player" controls class="w-full h-full">
-                    <source src="" type="video/mp4">
-                </video>
-            </div>
-            <p class="text-xs text-gray-400 mb-4 flex items-center gap-1">
-                <i class="fa-solid fa-circle-info text-yellow-500"></i> ভিডিও লোড হতে ১-১৫ সেকেন্ড সময় নিবে
-            </p>
-
-            <button id="modal-watch-btn" class="w-full bg-[#22c55e] text-white font-bold py-3.5 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2 active:scale-98 transition mb-3">
-                <i class="fa-solid fa-play"></i> WATCH FULL VIDEO
-            </button>
-            
-            <p class="text-[10px] text-gray-500 tracking-wide mb-4">🚀 ULTRA FAST STREAMING SERVER</p>
-        </div>
-
-        <div class="bg-[#0f1016] p-4 border-t border-gray-900 rounded-t-2xl flex-1">
-            <h3 class="text-xs font-bold text-gray-400 mb-3 flex items-center gap-1.5">
-                <i class="fa-solid fa-comments text-purple-400"></i> কমেন্ট সেকশন (<span id="comment-count">0</span>)
-            </h3>
-            
-            <div class="flex flex-col gap-2 mb-4">
-                <input type="text" id="comment-name" placeholder="আপনার নাম..." class="bg-[#14151f] text-white text-xs p-2.5 rounded-lg border border-gray-800 focus:outline-none">
-                <div class="flex gap-2">
-                    <input type="text" id="comment-text" placeholder="একটি কমেন্ট লিখুন..." class="flex-1 bg-[#14151f] text-white text-xs p-2.5 rounded-lg border border-gray-800 focus:outline-none">
-                    <button onclick="submitComment()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
-            </div>
-
-            <div id="comments-box" class="space-y-3 max-h-48 overflow-y-auto pr-1">
-                </div>
-        </div>
-    </div>
-</div>
-
 <script>
 const tg = window.Telegram.WebApp;
 tg.ready(); tg.expand();
@@ -99,7 +53,6 @@ const db = firebase.database();
 const MONETAG_SMARTLINK = "https://omg10.com/4/10611800";
 let adProgress = JSON.parse(localStorage.getItem('user_ad_progress')) || {};
 let allMoviesData = [];
-let currentMovieId = null;
 
 function loadMovies() {
     db.ref('movies').on('value', (snapshot) => {
@@ -172,17 +125,17 @@ function searchMovies() {
 async function handleUnlock(id, url) {
     const btn = document.getElementById(`btn-${id}`);
     
-    // যদি অলরেডি ৫টি অ্যাড দেখা শেষ হয়ে থাকে, তবে ৩ নম্বর স্ক্রিনশটের মতো প্লেয়ার পপ-আপ চালু হবে
+    // ৫টি অ্যাড দেখা শেষ হলে ইউজারকে সরাসরি ব্রাউজারে ফুল স্ক্রিন ভিডিও লিংকে পাঠিয়ে দেওয়া হবে
     if(adProgress[id] >= 5) {
-        openPlayer(id, url);
+        tg.openLink(url);
         return;
     }
 
     btn.disabled = true;
     if (typeof show_10500197 === 'function') {
-        show_10500197().catch(() => { window.open(MONETAG_SMARTLINK, '_blank'); });
+        show_10500197().catch(() => { tg.openLink(MONETAG_SMARTLINK); });
     } else {
-        window.open(MONETAG_SMARTLINK, '_blank');
+        tg.openLink(MONETAG_SMARTLINK);
     }
 
     let timeLeft = 15;
@@ -198,85 +151,6 @@ async function handleUnlock(id, url) {
             tg.HapticFeedback.notificationOccurred('success');
         }
     }, 1000);
-}
-
-// 🎬 প্লেয়ার এবং কমেন্ট বক্স ওপেন করার ফাংশন
-function openPlayer(id, videoUrl) {
-    currentMovieId = id;
-    document.getElementById('player-modal').classList.remove('hidden');
-    
-    // ভিডিও ইউআরএল সেট করা
-    const video = document.getElementById('main-video-player');
-    video.src = videoUrl;
-    video.load();
-    
-    // ওয়াচ ফুল ভিডিও বাটনে অ্যাকশন সেট করা
-    document.getElementById('modal-watch-btn').onclick = function() {
-        window.location.href = videoUrl;
-    };
-
-    // ফায়ারবেজ থেকে এই ভিডিওর কমেন্টগুলো লাইভ লোড করা
-    loadComments(id);
-}
-
-function closePlayer() {
-    const video = document.getElementById('main-video-player');
-    video.pause();
-    video.src = "";
-    document.getElementById('player-modal').classList.add('hidden');
-    currentMovieId = null;
-}
-
-// 💬 ফায়ারবেজ থেকে কমেন্ট লোড করার ফাংশন
-function loadComments(movieId) {
-    db.ref(`comments/${movieId}`).on('value', (snapshot) => {
-        const box = document.getElementById('comments-box');
-        const countSpan = document.getElementById('comment-count');
-        box.innerHTML = '';
-        
-        if (!snapshot.exists()) {
-            box.innerHTML = '<p class="text-[11px] text-gray-600 text-center py-4">কোনো কমেন্ট নেই। প্রথম কমেন্টটি আপনি করুন!</p>';
-            countSpan.innerText = "0";
-            return;
-        }
-
-        let count = 0;
-        snapshot.forEach((child) => {
-            const c = child.val();
-            count++;
-            box.innerHTML = `
-                <div class="bg-[#14151f] p-2.5 rounded-lg border border-gray-900">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs text-yellow-500 font-semibold">${c.name}</span>
-                        <span class="text-[9px] text-gray-500">জাস্ট এখন</span>
-                    </div>
-                    <p class="text-xs text-gray-300">${c.text}</p>
-                </div>
-            ` + box.innerHTML; // নতুন কমেন্ট উপরে দেখাবে
-        });
-        countSpan.innerText = count;
-    });
-}
-
-// 📝 নতুন কমেন্ট সাবমিট করার ফাংশন
-function submitComment() {
-    const nameInput = document.getElementById('comment-name');
-    const textInput = document.getElementById('comment-text');
-    
-    const name = nameInput.value.trim() || "Anonymous";
-    const text = textInput.value.trim();
-    
-    if(!text) return;
-
-    // ফায়ারবেজে কমেন্ট পুশ করা
-    db.ref(`comments/${currentMovieId}`).push({
-        name: name,
-        text: text,
-        timestamp: Date.now()
-    });
-
-    textInput.value = ''; // ইনপুট বক্স ক্লিয়ার করা
-    tg.HapticFeedback.impactOccurred('light');
 }
 
 window.onload = () => {
